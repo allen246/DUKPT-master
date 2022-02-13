@@ -59,23 +59,21 @@ class DUKPT:
         ksnr   = BitArray(bytes=ksn.bytes[ksn_offset:])
         r3     = self.copy_counter(ksnr)
         r8     = self.reset_counter(ksnr.bytes)
-        sr     = BitArray(hex='0x100000')
+        # sr     = BitArray(hex='0x100000')
+        sr     = BitArray(hex='0x000100')
        
-        while (sr.bytes[0] != '\x00') or (sr.bytes[1] != '\x00') or (sr.bytes[2] != '\x00'):
+        while (sr.bytes[0:1]) != b'\x00' or (sr.bytes[1:2]) != b'\x00' or (sr.bytes[2:3] != b'\x00'):
             tmp = self.copy_counter(sr)
             tmp = tmp & r3
-            if (tmp.bytes[0] != '\x00') or (tmp.bytes[1] != '\x00') or (tmp.bytes[2] != '\x00'): 
+            if (tmp.bytes[0:1]) != b'\x00' or (tmp.bytes[1:2]) != b'\x00' or (tmp.bytes[2:3] != b'\x00'): 
                 # Step 2
                 n_ctr = BitArray(bytes=r8.bytes[ctr_offset:]) | sr
                 r8    = BitArray(bytes=r8.bytes[:ctr_offset]+n_ctr.bytes)
-                
                 # Step 3
                 r8a   = r8 ^ BitArray(bytes=curkey.bytes[right_offset:])
-                
                 # Step 4
                 cipher = DES.new(curkey.bytes[:DES.key_size], DES.MODE_ECB)
                 r8a    = BitArray(bytes=cipher.encrypt(r8a.bytes))
-                
                 # Step 5
                 r8a = BitArray(bytes=curkey.bytes[right_offset:]) ^ r8a
 
@@ -94,7 +92,6 @@ class DUKPT:
 
                 # Step 10 / 11
                 curkey = BitArray(bytes=r8b.bytes+r8a.bytes)
-
             sr >>= 1
         self._cur_key = curkey
         return curkey
